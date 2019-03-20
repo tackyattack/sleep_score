@@ -106,13 +106,13 @@ class EDF_file():
 
     def get_signal_number(self, name):
         for i in range(self.number_signals):
-            if name in self.signal_labels[i]:
+            if name in str(self.signal_labels[i]):
                 return i
 
     def get_record(self, record_number):
         record_len_bytes = self.data_record_length*2
         file_offset = self.header_bytes + record_len_bytes*(record_number)
-        self.edf_file.seek(file_offset, 0)
+        self.edf_file.seek(int(file_offset), 0)
         return bytearray(self.read_EDF_bytes(record_len_bytes))
 
     def get_signal_samples(self, offset, size, signal_name):
@@ -133,9 +133,9 @@ class EDF_file():
             loops = loops*2 # two bytes per sample
             i = 0
             while(i < loops):
-                lo = record[i + pos*2 + signal_offset*2]
+                lo = record[int(i + pos*2 + signal_offset*2)]
                 i = i + 1
-                hi = record[i + pos*2 + signal_offset*2]
+                hi = record[int(i + pos*2 + signal_offset*2)]
                 i = i + 1
                 val = (hi << 8) | lo
                 if (val & 0x8000):
