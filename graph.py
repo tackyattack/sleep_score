@@ -8,16 +8,43 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import sys
-import numpy
+import numpy as np
 
 class Grapher(QWidget):
     def __init__(self):
         super().__init__()
+        self.y_divs = 1
+        self.x_divs = 1
+        self.x_max = 1
+        self.y_max = 4
+        self.v_shift = 0.0
+        self.data = np.array([1,2,3,4])
 
-        #self.initUI()
+        self.initUI()
 
-    #def initUI(self):
-       # self.show()
+    def initUI(self):
+        self.show()
+
+    def setData(self, array):
+        self.data = array # could have option for 2D array that contains the x line spacing (optional)
+        self.x_max = len(self.data) - 1
+        self.repaint()
+
+    def setVerticalGraphShift(self, v):
+        self.v_shift = v
+        self.repaint()
+
+    def setYDivs(self, yd):
+        self.y_divs = yd
+
+    def setYMax(self, ym):
+        self.y_max = ym
+
+    def setXMax(self, xm):
+        self.x_max = xm
+
+    def setXDivs(self, xd):
+        self.x_divs = xd
 
     def paintEvent(self, e):
         qp = QPainter()
@@ -36,11 +63,7 @@ class Grapher(QWidget):
         height = self.frameGeometry().height()
 
         qp.setPen(pen)
-        qp.drawLine(0, height, width, height)
-        qp.drawLine(0, 0, width, 0)
 
-        qp.drawLine(0, 0, 0, height)
-        qp.drawLine(width, 0, width, height)
 
         qp.setPen(QColor(100,100,100))
         divisions = 10
@@ -51,52 +74,27 @@ class Grapher(QWidget):
             current_height = current_height + height_divisions
             qp.drawLine(0, current_height, width, current_height)
 
+        # draw line plot
+        #self.y_max = np.max(self.data)
+        qp.setPen(Qt.yellow)
+        for i in range(len(self.data)-1):
+            y1 = ((self.data[i]+self.v_shift)/self.y_divs)/self.y_max # normalize
+            y1 = height - y1*height
+            x1 = i/self.x_divs/self.x_max
+            x1 = x1*width
 
-        # pen.setStyle(Qt.DashLine)
-        # qp.setPen(pen)
-        # qp.drawLine(0, 80, width, 80)
-        #
-        # pen.setStyle(Qt.DashDotLine)
-        # qp.setPen(pen)
-        # qp.drawLine(0, 120, width, 120)
-        #
-        # pen.setStyle(Qt.DotLine)
-        # qp.setPen(pen)
-        # qp.drawLine(0, 160, width, 160)
-        #
-        # pen.setStyle(Qt.DashDotDotLine)
-        # qp.setPen(pen)
-        # qp.drawLine(0, 200, width, 200)
-        #
-        # pen.setStyle(Qt.CustomDashLine)
-        # pen.setDashPattern([1, 4, 5, 4])
-        # qp.setPen(pen)
-        # qp.drawLine(0, 240, width, 240)
+            y2 = ((self.data[i+1]+self.v_shift)/self.y_divs)/self.y_max # normalize
+            y2 = height - y2*height
+            x2 = (i+1)/self.x_divs/self.x_max
+            x2 = x2*width
 
-class Window(QWidget):
-    def __init__(self):
-        QWidget.__init__(self)
-        self.setGeometry(300, 300, 280, 270)
+            qp.drawLine(int(x1), int(y1), int(x2), int(y2))
 
-        p = self.palette()
-        p.setColor(self.backgroundRole(), Qt.black)
-        self.setPalette(p)
+        # draw bounding box
+        qp.setPen(Qt.white)
+        qp.drawLine(0, height, width, height)
+        qp.drawLine(0, 0, width, 0)
 
-        self.button = QPushButton('Test', self)
-        self.button.clicked.connect(self.handleButton)
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.button)
+        qp.drawLine(0, 0, 0, height)
+        qp.drawLine(width, 0, width, height)
 
-        self.graph = Grapher()
-        layout.addWidget(self.graph)
-
-    def handleButton(self):
-        print ('Update')
-        #self.graph.update()
-
-app = QApplication(sys.argv)
-
-window = Window()
-window.show()
-
-sys.exit(app.exec_())

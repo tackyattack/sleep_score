@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import os
-import struct
 
 def twos_comp(val, bits):
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
@@ -36,7 +34,7 @@ class EDF_file():
         self.header_bytes = int(chunk[184:192])
         self.reserved = str(chunk[192:236])
         self.num_data_records = int(chunk[236:244])
-        self.data_record_duration = int(chunk[244:252])
+        self.data_record_duration = float(chunk[244:252])
         self.number_signals = int(chunk[252:256])
 
         # -- lower header parse --
@@ -119,7 +117,7 @@ class EDF_file():
         signal = []
         signal_number = self.get_signal_number(signal_name)
         ints_left = size
-        current_record = offset / self.samples_per_record[signal_number]
+        current_record = int(offset / self.samples_per_record[signal_number])
         current_offset = offset
 
         while(ints_left > 0):
@@ -149,11 +147,17 @@ class EDF_file():
         return signal
 
 
-e = EDF_file()
-e.open_EDF("../test_vectors/test_generator_2.edf")
-e.parse_header()
-samples = e.get_signal_samples(0, 500, "ECG")
-#print(samples)
+    def get_signal_sample_rate(self, signal_name):
+        signal_number = self.get_signal_number(signal_name)
+        samples_sec = self.samples_per_record[signal_number] / self.data_record_duration
+        return samples_sec
 
-plt.plot(samples)
-plt.show()
+
+#
+# e = EDF_file()
+# e.open_EDF("../test_vectors/test_generator_2.edf")
+# e.parse_header()
+# samples = e.get_signal_samples(0, 500, "ECG")
+#
+# plt.plot(samples)
+# plt.show()
