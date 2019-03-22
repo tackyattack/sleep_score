@@ -5,12 +5,13 @@ import sys
 import numpy as np
 import graph
 import edf
+import scorer
 
 
 class Window(QWidget):
     def __init__(self):
         QWidget.__init__(self)
-        self.setGeometry(300, 300, 280, 270)
+        self.setGeometry(300, 300, 1000, 270)
 
         p = self.palette()
         p.setColor(self.backgroundRole(), Qt.black)
@@ -23,7 +24,7 @@ class Window(QWidget):
 
         self.sl = QSlider(Qt.Horizontal)
         self.sl.setMinimum(0)
-        self.sl.setMaximum(500)
+        self.sl.setMaximum(800)
         self.sl.setValue(0)
         self.sl.setTickPosition(QSlider.TicksBelow)
         self.sl.setTickInterval(1)
@@ -40,29 +41,33 @@ class Window(QWidget):
         shift = int(self.sl.value())
         e = edf.EDF_file()
         #e.open_EDF("../test_vectors/test_generator_2.edf")
-        e.open_EDF("../test_vectors/eeg_recording/ma0844az_1-1+.edf")
+        #signal_name = "sine 15"
+
+        e.open_EDF("../test_vectors/eeg_recording/SC4011E0-PSG.edf")
+        signal_name = "EEG Pz"
+
+        #e.open_EDF("../test_vectors/eeg_recording/ma0844az_1-1+.edf")
+        #signal_name = "EEG F3"
+
         e.parse_header()
-        samples = np.array(e.get_signal_samples(0+shift*200, 500, "EEG F3"))
-        self.data_graph.setVerticalGraphShift(300)
-        self.data_graph.setYDivs(5)
+        sr = e.get_signal_sample_rate(signal_name)
+
+        start_time_min = 0
+        start_pos = start_time_min*60*sr+shift*2000
+        print("min:" + str(start_pos/sr/60))
+        samples = np.array(e.get_signal_samples(start_pos, 4000, signal_name))
+        self.data_graph.setVerticalGraphShift(1000)
+        self.data_graph.setYDivs(10)
         self.data_graph.setYMax(300)
         self.data_graph.setData(samples)
 
-        samples = np.pad(samples, (0,1500), 'constant')
-        fft = np.fft.fft(samples)
-        spec = np.abs(fft[:len(fft)//2])
-        spec = np.square(spec)
-        spec = spec / (2000*200)
-        # 200 / (1500+500) = 0.1 Hz resolution
-        spec = spec[0:400] # 0 - 40Hz
+        spec = scorer.score_epoch(samples, sr)
 
         self.fft_graph.setVerticalGraphShift(300)
         self.fft_graph.setYDivs(100)
         self.fft_graph.setYMax(100)
         self.fft_graph.setData(spec)
         self.fft_graph.setXDivs(1)
-
-        #print(e.get_signal_sample_rate("EEG F3"))
 
     def handleButton(self):
         print ('Update')
